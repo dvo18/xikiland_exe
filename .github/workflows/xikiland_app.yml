@@ -36,19 +36,23 @@ jobs:
       run: |
         VERSION_FILE="version.txt"
         VERSION_PREFIX=$(cat $VERSION_FILE)  # Obtener el prefijo de la versión desde version.txt
+        echo "Version prefix from version.txt: $VERSION_PREFIX"
         
         # Buscar las etiquetas existentes con el mismo prefijo
         LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
+        echo "Latest tag found with prefix $VERSION_PREFIX: $LATEST_TAG"
         
         if [ -z "$LATEST_TAG" ]; then
           # Si no existe ninguna etiqueta con el prefijo, crear una nueva etiqueta 0
           NEW_TAG="${VERSION_PREFIX}0"
+          echo "No tag found. Creating new tag: $NEW_TAG"
         else
           # Obtener el número de la etiqueta más alta, sumar 1 y crear una nueva
           NEW_TAG=$(echo "$LATEST_TAG" | awk -F. -v OFS=. '{$NF++; print}')
+          echo "Tag found. Incrementing to new tag: $NEW_TAG"
         fi
 
-        echo "New tag: $NEW_TAG"
+        echo "New tag to be pushed: $NEW_TAG"
         
         # Configurar el usuario de git para hacer el push
         git config --global user.name "github-actions"
