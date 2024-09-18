@@ -189,6 +189,8 @@ def main():
     profiles_management()
     git_management()
 
+    subprocess.run(command_list)
+
 
 if __name__ == "__main__":
     main()
