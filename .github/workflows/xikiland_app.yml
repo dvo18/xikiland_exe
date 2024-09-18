@@ -30,34 +30,44 @@ jobs:
       run: |
         pyinstaller --onefile --windowed --name XIKILAND --icon icons/xikiland_icon.ico main.py
 
-    # Create the tag
+    # Crear el tag
     - name: Create Git tag
       id: create_tag
       run: |
         VERSION_FILE="version.txt"
-        VERSION_PREFIX=$(cat $VERSION_FILE)
+        VERSION_PREFIX=$(cat $VERSION_FILE)  # Obtener el prefijo de la versión desde version.txt
+        
+        # Buscar las etiquetas existentes con el mismo prefijo
         LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
         
         if [ -z "$LATEST_TAG" ]; then
+          # Si no existe ninguna etiqueta con el prefijo, crear una nueva etiqueta 0
           NEW_TAG="${VERSION_PREFIX}0"
         else
+          # Obtener el número de la etiqueta más alta, sumar 1 y crear una nueva
           NEW_TAG=$(echo "$LATEST_TAG" | awk -F. -v OFS=. '{$NF++; print}')
         fi
-        
+
         echo "New tag: $NEW_TAG"
+        
+        # Configurar el usuario de git para hacer el push
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
+        
+        # Intentar crear el nuevo tag
         git tag $NEW_TAG
+        
+        # Hacer push del nuevo tag
         git push origin $NEW_TAG
-
-        # Use environment files instead of set-output
+        
+        # Guardar la nueva etiqueta en el archivo de entorno
         echo "tag=$NEW_TAG" >> $GITHUB_ENV
     
-    # Upload executable to GitHub Release
+    # Subir a GitHub Release
     - name: Upload executable to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: dist/client_XIKILAND2
-        tag_name: ${{ env.tag }}  # Use the tag from the environment file
+        tag_name: ${{ env.tag }}  # Usamos el tag generado desde el archivo de entorno
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
