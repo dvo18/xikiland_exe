@@ -40,7 +40,7 @@ jobs:
         
         # Buscar las etiquetas existentes con el mismo prefijo
         LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
-        echo "LIST: $(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname)"
+        echo "LIST: $(git tag --list)"
         echo "Latest tag found with prefix $VERSION_PREFIX: $LATEST_TAG"
         
         if [ -z "$LATEST_TAG" ]; then
