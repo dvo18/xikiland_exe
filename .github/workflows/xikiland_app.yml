@@ -66,7 +66,7 @@ jobs:
         git tag $NEW_TAG
         
         # Hacer push del nuevo tag
-        #git push origin $NEW_TAG
+        git push origin $NEW_TAG
         
         # Guardar la nueva etiqueta en el archivo de entorno
         echo "tag=$NEW_TAG" >> $GITHUB_ENV
@@ -75,10 +75,10 @@ jobs:
       run: ls -l dist
       
     # Subir a GitHub Release
-    #- name: Upload executable to GitHub Release
-    #  uses: softprops/action-gh-release@v1
-    #  with:
-    #    files: dist/XIKILAND
-    #    tag_name: ${{ env.tag }}  # Usamos el tag generado desde el archivo de entorno
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload executable to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/XIKILAND
+        tag_name: ${{ env.tag }}  # Usamos el tag generado desde el archivo de entorno
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
