@@ -38,9 +38,12 @@ jobs:
         VERSION_PREFIX=$(cat $VERSION_FILE)  # Obtener el prefijo de la versión desde version.txt
         echo "Version prefix from version.txt: $VERSION_PREFIX"
         
+        # Asegurarse de que se han obtenido todas las etiquetas del repositorio remoto
+        git fetch --tags
+        echo "LIST after fetch: $(git tag --list)"
+        
         # Buscar las etiquetas existentes con el mismo prefijo
         LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
-        echo "LIST: $(git tag --list)"
         echo "Latest tag found with prefix $VERSION_PREFIX: $LATEST_TAG"
         
         if [ -z "$LATEST_TAG" ]; then
