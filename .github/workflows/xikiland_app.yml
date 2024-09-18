@@ -75,7 +75,7 @@ jobs:
     - name: Upload executable to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/client_XIKILAND2
+        files: dist/XIKILAND
         tag_name: ${{ env.tag }}  # Usamos el tag generado desde el archivo de entorno
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
