@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Check out the repository
@@ -28,57 +28,30 @@ jobs:
 
     - name: Create Executable using PyInstaller
       run: |
-        pyinstaller --onefile --windowed --name XIKILAND --icon icons/xikiland_icon.ico main.py
+        pyinstaller --onefile --name XIKILAND --icon icons/xikiland_icon.ico --noconsole main.py
 
-    # Crear el tag
     - name: Create Git tag
       id: create_tag
       run: |
         VERSION_FILE="version.txt"
-        VERSION_PREFIX=$(cat $VERSION_FILE)  # Obtener el prefijo de la versión desde version.txt
-        echo "Version prefix from version.txt: $VERSION_PREFIX"
-        
-        # Asegurarse de que se han obtenido todas las etiquetas del repositorio remoto
+        VERSION_PREFIX=$(cat $VERSION_FILE)
         git fetch --tags
-        echo "LIST after fetch: $(git tag --list)"
-        
-        # Buscar las etiquetas existentes con el mismo prefijo
         LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
-        echo "Latest tag found with prefix $VERSION_PREFIX: $LATEST_TAG"
-        
         if [ -z "$LATEST_TAG" ]; then
-          # Si no existe ninguna etiqueta con el prefijo, crear una nueva etiqueta 0
           NEW_TAG="${VERSION_PREFIX}0"
-          echo "No tag found. Creating new tag: $NEW_TAG"
         else
-          # Obtener el número de la etiqueta más alta, sumar 1 y crear una nueva
           NEW_TAG=$(echo "$LATEST_TAG" | awk -F. -v OFS=. '{$NF++; print}')
-          echo "Tag found. Incrementing to new tag: $NEW_TAG"
         fi
-
-        echo "New tag to be pushed: $NEW_TAG"
-        
-        # Configurar el usuario de git para hacer el push
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
-        
-        # Intentar crear el nuevo tag
         git tag $NEW_TAG
-        
-        # Hacer push del nuevo tag
         git push origin $NEW_TAG
-        
-        # Guardar la nueva etiqueta en el archivo de entorno
         echo "tag=$NEW_TAG" >> $GITHUB_ENV
 
-    - name: List dist directory
-      run: ls -l dist
-      
-    # Subir a GitHub Release
     - name: Upload executable to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/XIKILAND
-        tag_name: ${{ env.tag }}  # Usamos el tag generado desde el archivo de entorno
+        files: dist/XIKILAND.exe
+        tag_name: ${{ env.tag }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
