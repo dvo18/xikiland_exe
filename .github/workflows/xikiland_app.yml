@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-  # Puedes descomentar esto si deseas ejecutar el flujo de trabajo en pull requests
-  # pull_request:
-  #   branches:
-  #     - main
 
 jobs:
   build:
@@ -30,11 +26,6 @@ jobs:
     - name: Install PyInstaller
       run: pip install pyinstaller
 
-    - name: Download icon
-      run: |
-        mkdir -p icons
-        curl -L -o icons/xikiland_icon.ico https://raw.githubusercontent.com/dvo18/xikiland_exe/main/icons/xikiland_icon.ico
-
     - name: Create Executable using PyInstaller
       run: |
         pyinstaller --onefile --windowed --name client_XIKILAND2 --icon icons/xikiland_icon.ico main.py
@@ -42,16 +33,37 @@ jobs:
     - name: Create Git tag
       id: create_tag
       run: |
+        # Read the version prefix from version.txt
         VERSION_FILE="version.txt"
         if [ -f "$VERSION_FILE" ]; then
-          CURRENT_VERSION=$(cat $VERSION_FILE)
-          NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{$NF++;print}')
+          VERSION_PREFIX=$(cat $VERSION_FILE | sed 's/\.$//')  # Remove trailing dot if present
         else
-          NEW_VERSION="v1.0.0"
+          echo "Version file not found!"
+          exit 1
         fi
-        echo $NEW_VERSION > $VERSION_FILE
-        git tag $NEW_VERSION
-        git push origin $NEW_VERSION
+        
+        # Fetch all tags
+        git fetch --tags
+
+        # Find the highest existing tag that matches the prefix
+        LAST_TAG=$(git tag -l "${VERSION_PREFIX}*" | sort -V | tail -n 1)
+
+        # Extract the version number and increment it
+        if [ -z "$LAST_TAG" ]; then
+          # If no existing tag is found, start with 0
+          NEW_TAG="${VERSION_PREFIX}.0"
+        else
+          # Extract the last version number and increment it
+          LAST_VERSION=$(echo "$LAST_TAG" | sed "s/${VERSION_PREFIX}.\(.*\)/\1/")
+          NEW_VERSION=$(echo "$LAST_VERSION + 1" | bc)
+          NEW_TAG="${VERSION_PREFIX}.${NEW_VERSION}"
+        fi
+        
+        # Create and push the new tag
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git tag $NEW_TAG
+        git push origin $NEW_TAG
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
