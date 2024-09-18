@@ -56,7 +56,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: dist/client_XIKILAND2
-        tag: ${{ steps.create_tag.outputs.tag }}  # Usamos el tag generado
+        tag_name: ${{ steps.create_tag.outputs.tag }}  # Usamos el tag generado
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
