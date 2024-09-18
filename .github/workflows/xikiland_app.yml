@@ -30,46 +30,33 @@ jobs:
       run: |
         pyinstaller --onefile --windowed --name client_XIKILAND2 --icon icons/xikiland_icon.ico main.py
 
+    # Crear el tag
     - name: Create Git tag
       id: create_tag
       run: |
-        # Read the version prefix from version.txt
         VERSION_FILE="version.txt"
-        if [ -f "$VERSION_FILE" ]; then
-          VERSION_PREFIX=$(cat $VERSION_FILE | sed 's/\.$//')  # Remove trailing dot if present
+        VERSION_PREFIX=$(cat $VERSION_FILE)
+        LATEST_TAG=$(git tag --list "${VERSION_PREFIX}*" --sort=-v:refname | head -n 1)
+        
+        if [ -z "$LATEST_TAG" ]; then
+          NEW_TAG="${VERSION_PREFIX}0"
         else
-          echo "Version file not found!"
-          exit 1
+          NEW_TAG=$(echo "$LATEST_TAG" | awk -F. -v OFS=. '{$NF++; print}')
         fi
         
-        # Fetch all tags
-        git fetch --tags
-
-        # Find the highest existing tag that matches the prefix
-        LAST_TAG=$(git tag -l "${VERSION_PREFIX}*" | sort -V | tail -n 1)
-
-        # Extract the version number and increment it
-        if [ -z "$LAST_TAG" ]; then
-          # If no existing tag is found, start with 0
-          NEW_TAG="${VERSION_PREFIX}.0"
-        else
-          # Extract the last version number and increment it
-          LAST_VERSION=$(echo "$LAST_TAG" | sed "s/${VERSION_PREFIX}.\(.*\)/\1/")
-          NEW_VERSION=$(echo "$LAST_VERSION + 1" | bc)
-          NEW_TAG="${VERSION_PREFIX}.${NEW_VERSION}"
-        fi
-        
-        # Create and push the new tag
+        echo "New tag: $NEW_TAG"
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
         git tag $NEW_TAG
         git push origin $NEW_TAG
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload executable to GitHub Releases
+        echo "::set-output name=tag::$NEW_TAG"
+    
+    # Subir a GitHub Release
+    - name: Upload executable to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: dist/client_XIKILAND2
+        tag: ${{ steps.create_tag.outputs.tag }}  # Usamos el tag generado
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
