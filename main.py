@@ -2,6 +2,7 @@ import sys
 import json
 import shutil
 import subprocess
+import win32com.client
 
 from pathlib import Path
 from tkinter import Tk, messagebox
@@ -39,6 +40,65 @@ def show_end_alert(message, error=True):
     
     root.destroy()
     sys.exit(1)
+
+
+def create_shortcut(executable_path):
+    shortcut_path = Path.home() / 'Desktop' / 'XIKILAND.lnk'
+
+    if shortcut_path.exists():
+        print(f"El acceso directo ya existe en: {shortcut_path}")
+        return
+
+    try:
+        shell = win32com.client.Dispatch("WScript.Shell")
+
+        shortcut = shell.CreateShortCut(str(shortcut_path))
+
+        shortcut.Targetpath = str(executable_path)
+        shortcut.WorkingDirectory = str(executable_path.parent)
+
+        shortcut.save()
+
+        print(f"Acceso directo creado en: {shortcut_path}")
+        
+    except Exception as e:
+        show_end_alert(f"No se pudo crear el acceso directo: {e}")
+
+
+def initializate():
+    launcher_path = Path.home() / 'AppData' / 'Roaming' / '.xikiLauncher'
+ 
+    try:
+        if not launcher_path.exists():
+            print(f"Creando el directorio {launcher_path}")
+            launcher_path.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        show_end_alert(f"No se pudo crear el directorio {launcher_path}: {e}")
+    
+    current_executable = Path(sys.argv[0]).resolve()
+    target_executable = launcher_path / current_executable.name
+    
+    if current_executable != target_executable:
+        try:
+            print(f"Moviendo el ejecutable desde {current_executable} a {target_executable}")
+            shutil.move(str(current_executable), str(target_executable))
+
+            create_shortcut(target_executable)
+
+            print(f"Reiniciando el programa desde {target_executable}")
+            try:
+                print(f"Reiniciando el programa desde {target_executable}")
+                # subprocess.run([str(target_executable)] + sys.argv[1:], check=True)
+
+            except subprocess.CalledProcessError as e:
+                show_end_alert(f"Error al reiniciar el programa: {e}")
+            except Exception as e:
+                show_end_alert(f"Error inesperado al reiniciar el programa: {e}")
+            
+            sys.exit(0)
+            
+        except Exception as e:
+            show_end_alert(f"Error moviendo el ejecutable: {e}")
 
 
 def profiles_management():
@@ -186,6 +246,7 @@ def git_management():
 
  
 def main():
+    initializate()
     profiles_management()
     git_management()
 
