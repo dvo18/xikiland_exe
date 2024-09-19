@@ -1,6 +1,7 @@
 import sys
 import json
 import shutil
+import requests
 import subprocess
 import win32com.client
 
@@ -9,15 +10,18 @@ from tkinter import Tk, messagebox
 from datetime import datetime, timezone
 from git import Repo, GitCommandError,InvalidGitRepositoryError
 
-#prueba
-
 
 instance_name = 'client_XIKILAND2'
 
 git_repo = "https://github.com/dvo18/XIKILAND.git"
 
+github_api = "https://api.github.com/repos/dvo18/xikiland_exe/releases/latest"
+
+
 CF_install_path = Path.home() / 'curseforge' / 'minecraft' / 'Install'
 CF_instnace_path = Path.home() / 'curseforge' / 'minecraft' / 'Instances' / instance_name
+
+launcher_path = Path.home() / 'AppData' / 'Roaming' / '.xikiLauncher'
 
 
 command_list = [f'{CF_install_path}/minecraft.exe', '--workDir', CF_install_path]
@@ -46,8 +50,7 @@ def create_shortcut(executable_path):
     shortcut_path = Path.home() / 'Desktop' / 'XIKILAND.lnk'
 
     if shortcut_path.exists():
-        print(f"El acceso directo ya existe en: {shortcut_path}")
-        return
+        shortcut_path.unlink()
 
     try:
         shell = win32com.client.Dispatch("WScript.Shell")
@@ -56,6 +59,7 @@ def create_shortcut(executable_path):
 
         shortcut.Targetpath = str(executable_path)
         shortcut.WorkingDirectory = str(executable_path.parent)
+        shortcut.IconLocation = str(executable_path)
 
         shortcut.save()
 
@@ -65,40 +69,127 @@ def create_shortcut(executable_path):
         show_end_alert(f"No se pudo crear el acceso directo: {e}")
 
 
+def check_for_updates():
+    try:
+        with open(launcher_path / 'version.txt', 'r') as f:
+            current_version = f.read().strip()
+        
+    except FileNotFoundError:
+        return None 
+    except Exception as e:
+        show_end_alert(f"Error al leer la versión actual: {e}")
+    
+    try:
+        try:
+            response = requests.get(github_api)
+            response.raise_for_status()
+            latest_release = response.json()
+
+        except requests.exceptions.HTTPError as http_err:
+            print(f"Error HTTP: {http_err}")
+        except requests.exceptions.RequestException as err:
+            print(f"Error en la solicitud: {err}")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+
+        latest_version = latest_release['tag_name']
+        download_url = latest_release['assets'][0]['browser_download_url']
+
+        if not current_version:
+            print(f"No se encontró una versión actual. Instalando la versión más reciente: {latest_version}")
+
+        if current_version != latest_version or not current_version:
+            print(f"Una nueva versión está disponible: {latest_version} (Actual: {current_version})")
+
+            try:
+                response = requests.get(download_url, stream=True)
+                response.raise_for_status()
+
+                print(f"Descargando el archivo desde {download_url} a {launcher_path / download_url.split('/')[-1]}")
+                with open(launcher_path / download_url.split('/')[-1], 'wb') as f:
+                    shutil.copyfileobj(response.raw, f)
+                
+                create_shortcut(launcher_path / download_url.split('/')[-1])
+
+                try:
+                    comando = f"Add-MpPreference -ExclusionProcess '{str(launcher_path / download_url.split('/')[-1])}'"
+                    subprocess.run(["powershell", "-Command", comando], check=True)
+                except Exception as e:
+                    show_end_alert(f"No se pudo agregar {launcher_path} como exclusion de windows defender: {e}")
+
+            except requests.exceptions.HTTPError as http_err:
+                print(f"Error HTTP: {http_err}")
+            except requests.exceptions.RequestException as e:
+                show_end_alert(f"Error al descargar el archivo: {e}")
+            except Exception as e:
+                show_end_alert(f"Error inesperado al descargar el archivo: {e}")
+
+            with open(launcher_path / 'version.txt', 'w') as f:
+                f.write(latest_version)
+
+            print(f"Actualizado a la versión {latest_version}")
+
+            return True
+
+        else:
+            print(f"Tienes la versión más reciente: {current_version}")
+
+            return False
+        
+    except Exception as e:
+        show_end_alert(f"Error al obtener la última versión: {e}")
+
+
 def initializate():
-    launcher_path = Path.home() / 'AppData' / 'Roaming' / '.xikiLauncher'
- 
     try:
         if not launcher_path.exists():
             print(f"Creando el directorio {launcher_path}")
             launcher_path.mkdir(parents=True, exist_ok=True)
+
+            try:
+                comando = f"Add-MpPreference -ExclusionPath '{str(launcher_path)}'"
+                subprocess.run(["powershell", "-Command", comando], check=True)
+            except Exception as e:
+                show_end_alert(f"No se pudo agregar {launcher_path} como exclusion de windows defender: {e}")
+
     except Exception as e:
         show_end_alert(f"No se pudo crear el directorio {launcher_path}: {e}")
     
+    try:
+        version_file = launcher_path / 'version.txt'
+        if not version_file.exists():
+            print(f"Creando el archivo {version_file}")
+            version_file.touch()
+    except Exception as e:
+        show_end_alert(f"No se pudo crear el archivo {version_file}: {e}")
+
+    updates = check_for_updates()
+
     current_executable = Path(sys.argv[0]).resolve()
     target_executable = launcher_path / current_executable.name
-    
-    if current_executable != target_executable:
+
+    if updates or current_executable != target_executable:
+        if updates:
+            print("Se ha encontrado una nueva versión del ejecutable --> Se reiniciará el programa")
+        else:
+            print("El archivo que se ejecuta no es el del launcher --> Se reiniciará el programa desde el launcher")
+
         try:
-            print(f"Moviendo el ejecutable desde {current_executable} a {target_executable}")
-            shutil.move(str(current_executable), str(target_executable))
-
-            create_shortcut(target_executable)
-
-            print(f"Reiniciando el programa desde {target_executable}")
-            try:
-                print(f"Reiniciando el programa desde {target_executable}")
-                # subprocess.run([str(target_executable)] + sys.argv[1:], check=True)
-
-            except subprocess.CalledProcessError as e:
-                show_end_alert(f"Error al reiniciar el programa: {e}")
-            except Exception as e:
-                show_end_alert(f"Error inesperado al reiniciar el programa: {e}")
-            
-            sys.exit(0)
-            
+            current_executable = Path(sys.argv[0]).resolve()
+            print(f"Reiniciando el programa con el ejecutable: {str(launcher_path / current_executable.name)}")
+            subprocess.Popen([str(launcher_path / current_executable.name)] + sys.argv[1:])
+            #subprocess.Popen([str(launcher_path / 'XIKILAND.exe')] + sys.argv[1:])
+        
+        except subprocess.CalledProcessError as e:
+            show_end_alert(f"Error al reiniciar el programa: {e}")
         except Exception as e:
-            show_end_alert(f"Error moviendo el ejecutable: {e}")
+            show_end_alert(f"Error inesperado al reiniciar el programa: {e}")
+
+        if current_executable != target_executable:
+            print(f"Eliminando el ejecutable {current_executable}")
+            Path(sys.argv[0]).unlink()
+            
+        sys.exit(0)
 
 
 def profiles_management():
@@ -244,14 +335,16 @@ def git_management():
     except Exception as e:
         show_end_alert(f"Error inesperado: {e}")
 
- 
+
 def main():
     initializate()
     profiles_management()
     git_management()
 
-    subprocess.run(command_list)
+    with open(launcher_path / 'output.log', 'w') as out, open(launcher_path / 'crash.log', 'w') as err:
+        subprocess.Popen(command_list, stdout=out, stderr=err)
 
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
