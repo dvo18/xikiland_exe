@@ -6,6 +6,7 @@ import shutil
 import requests
 import subprocess
 import win32com.client
+import os
 
 from pathlib import Path
 from tkinter import Tk, messagebox
@@ -120,6 +121,22 @@ def check_for_updates():
             try:
                 response = requests.get(download_url, stream=True)
                 response.raise_for_status()
+
+                try:
+                    if (launcher_path / download_url.split('/')[-1]).exists():
+                        current_executable = launcher_path / download_url.split('/')[-1]
+                        old_dir = launcher_path / 'old'
+
+                        old_dir.mkdir(exist_ok=True)
+                        old_path = old_dir / current_executable.name
+
+                        shutil.move(str(current_executable), str(old_path))
+                        print(f"Ejecutable actual movido a: {old_path}")
+                        
+                        atexit.register(delete_executable, old_path)
+
+                except Exception as e:
+                    show_end_alert(f"No se pudo mover el ejecutable: {e}")
 
                 print(f"Descargando el archivo desde {download_url} a {launcher_path / download_url.split('/')[-1]}")
                 with open(launcher_path / download_url.split('/')[-1], 'wb') as f:
@@ -331,9 +348,6 @@ def git_management():
         print(f"Haciendo fetch del remoto 'origin'.")
         repo.remotes.origin.fetch()
 
-        # print("Limpiando el repositorio local...")
-        # repo.git.clean('-fd')
-
         if len(repo.heads) == 0:
             print("El repositorio local no tiene commits, reseteando a la rama remota 'main'.")
             repo.git.reset('--hard', 'origin/main')
@@ -356,7 +370,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    show_end_alert("PRUEBA")
+    # show_end_alert("PRUEBA")
                        
     initializate()
     profiles_management()
