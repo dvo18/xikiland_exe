@@ -59,7 +59,10 @@ def show_end_alert(message, error=True, out=True):
 
     if out:
         root.destroy()
-        sys.exit(0)
+        if error:
+            sys.exit(1)
+        else:
+            sys.exit(0)
 
 
 def create_shortcut(executable_path):
@@ -206,21 +209,11 @@ def initializate():
         else:
             print("El archivo que se ejecuta no es el del launcher --> Se reiniciará el programa desde el launcher")
 
-        try:
-            current_executable = Path(sys.argv[0]).resolve()
-            print(f"Reiniciando el programa con el ejecutable: {str(launcher_path / current_executable.name)}")
-            show_end_alert("El programa necesita reiniciarse manualmente", error=False)
-        
-        except subprocess.CalledProcessError as e:
-            show_end_alert(f"Error al reiniciar el programa: {e}")
-        except Exception as e:
-            show_end_alert(f"Error inesperado al reiniciar el programa: {e}")
-
         if current_executable != target_executable:
             print(f"Preparando para eliminar el ejecutable {current_executable}")
             atexit.register(delete_executable, current_executable)
             
-        sys.exit(0)
+        show_end_alert("El programa necesita reiniciarse manualmente", error=False)
 
 
 def profiles_management():
@@ -368,7 +361,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    # show_end_alert("PRUEBA", error=False, out=False)
+    show_end_alert("PRUEBA", error=False, out=False)
                        
     initializate()
     profiles_management()
@@ -376,6 +369,8 @@ def main():
 
     with open(launcher_path / 'output.log', 'w') as out, open(launcher_path / 'crash.log', 'w') as err:
         subprocess.Popen(command_list, stdout=out, stderr=err)
+
+    show_end_alert("PRUEBA 2", error=True, out=True)
 
     sys.exit(0)
 
