@@ -35,12 +35,16 @@ git_dirs = [ '.git', '.gitignore', '.gitattributes', 'README.md',
             '_XIKILAND-data' ]
 
 
-
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
     except Exception:
         return False
+    
+
+def execute_this(executable_path):
+    subprocess.Popen([str(executable_path)] + sys.argv[1:])
+    print(f"Se ha ejecutado el archivo {executable_path}")
 
 
 def delete_executable(executable_path):
@@ -55,11 +59,10 @@ def show_end_alert(message, error=True):
     
     if error:
         messagebox.showerror("Error", message)
+        root.destroy()
+        sys.exit(1)
     else:
         messagebox.showinfo("Información", message)
-    
-    root.destroy()
-    sys.exit(1)
 
 
 def create_shortcut(executable_path):
@@ -209,8 +212,8 @@ def initializate():
         try:
             current_executable = Path(sys.argv[0]).resolve()
             print(f"Reiniciando el programa con el ejecutable: {str(launcher_path / current_executable.name)}")
-            subprocess.Popen([str(launcher_path / current_executable.name)] + sys.argv[1:])
-            #subprocess.Popen([str(launcher_path / 'XIKILAND.exe')] + sys.argv[1:])
+            atexit.register(execute_this, launcher_path / current_executable.name)
+            #atexit.register(execute_this, launcher_path / 'XIKILAND.exe')
         
         except subprocess.CalledProcessError as e:
             show_end_alert(f"Error al reiniciar el programa: {e}")
@@ -369,7 +372,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    show_end_alert("PRUEBA", error=False)
+    #show_end_alert("PRUEBA", error=False)
                        
     initializate()
     profiles_management()
