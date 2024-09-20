@@ -58,7 +58,6 @@ def show_end_alert(message, error=True, out=True):
         messagebox.showinfo("Información", message)
 
     if out:
-        root.destroy()
         if error:
             sys.exit(1)
         else:
@@ -211,7 +210,6 @@ def initializate():
 
         if current_executable != target_executable:
             print(f"Preparando para eliminar el ejecutable {current_executable}")
-            show_end_alert("preparando para eliminar el ejecutable", error=False, out=False)
             atexit.register(delete_executable, current_executable)
             
         show_end_alert("El programa necesita reiniciarse manualmente", error=False)
@@ -362,7 +360,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    show_end_alert("PRUEBA", error=False, out=False)
+    # show_end_alert("PRUEBA", error=False, out=False)
                        
     initializate()
     profiles_management()
@@ -371,7 +369,7 @@ def main():
     with open(launcher_path / 'output.log', 'w') as out, open(launcher_path / 'crash.log', 'w') as err:
         subprocess.Popen(command_list, stdout=out, stderr=err)
 
-    show_end_alert("PRUEBA 2", error=True, out=True)
+    # show_end_alert("PRUEBA 2", error=True, out=True)
 
     sys.exit(0)
 
