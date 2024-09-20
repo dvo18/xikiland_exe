@@ -6,7 +6,6 @@ import shutil
 import requests
 import subprocess
 import win32com.client
-import os
 
 from pathlib import Path
 from tkinter import Tk, messagebox
@@ -370,7 +369,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    show_end_alert("PRUEBA")
+    #show_end_alert("PRUEBA")
                        
     initializate()
     profiles_management()
