@@ -369,7 +369,7 @@ def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
 
-    #show_end_alert("PRUEBA")
+    show_end_alert("PRUEBA", error=False)
                        
     initializate()
     profiles_management()
