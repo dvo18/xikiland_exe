@@ -1,6 +1,7 @@
 import sys
 import json
 import atexit
+import ctypes
 import shutil
 import requests
 import subprocess
@@ -32,6 +33,14 @@ git_dirs = [ '.git', '.gitignore', '.gitattributes', 'README.md',
             'config/fancymenu', 'config/missions', 
             'config/.gitignore', 
             '_XIKILAND-data' ]
+
+
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except Exception:
+        return False
 
 
 def delete_executable(executable_path):
@@ -344,6 +353,9 @@ def git_management():
 
 
 def main():
+    if not is_admin():
+        show_end_alert("Este programa necesita ser ejecutado como administrador")
+                       
     initializate()
     profiles_management()
     git_management()
