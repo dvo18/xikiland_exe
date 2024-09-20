@@ -129,7 +129,7 @@ def check_for_updates():
 
                 try:
                     comando = f"Add-MpPreference -ExclusionProcess '{str(launcher_path / download_url.split('/')[-1])}'"
-                    subprocess.run(['powershell', '-WindowStyle', 'Hidden', '-Command', comando], check=True)
+                    subprocess.run(['powershell', '-WindowStyle', 'Hidden', '-Command', comando], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 except Exception as e:
                     show_end_alert(f"No se pudo agregar {launcher_path} como exclusion de windows defender: {e}")
 
@@ -164,7 +164,7 @@ def initializate():
 
             try:
                 comando = f"Add-MpPreference -ExclusionPath '{str(launcher_path)}'"
-                subprocess.run(['powershell', '-WindowStyle', 'Hidden', '-Command', comando], check=True,)
+                subprocess.run(['powershell', '-WindowStyle', 'Hidden', '-Command', comando], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
             except Exception as e:
                 show_end_alert(f"No se pudo agregar {launcher_path} como exclusion de windows defender: {e}")
 
