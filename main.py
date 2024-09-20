@@ -355,6 +355,8 @@ def git_management():
 def main():
     if not is_admin():
         show_end_alert("Este programa necesita ser ejecutado como administrador")
+
+    show_end_alert("PRUEBA")
                        
     initializate()
     profiles_management()
