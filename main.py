@@ -211,6 +211,7 @@ def initializate():
 
         if current_executable != target_executable:
             print(f"Preparando para eliminar el ejecutable {current_executable}")
+            show_end_alert("preparando para eliminar el ejecutable", error=False, out=False)
             atexit.register(delete_executable, current_executable)
             
         show_end_alert("El programa necesita reiniciarse manualmente", error=False)
