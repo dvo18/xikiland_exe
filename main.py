@@ -1,5 +1,6 @@
 import sys
 import json
+import atexit
 import shutil
 import requests
 import subprocess
@@ -31,6 +32,12 @@ git_dirs = [ '.git', '.gitignore', '.gitattributes', 'README.md',
             'config/fancymenu', 'config/missions', 
             'config/.gitignore', 
             '_XIKILAND-data' ]
+
+
+def delete_executable(executable_path):
+    command = f"timeout /t 5 && del \"{executable_path}\""
+    subprocess.Popen(command, shell=True)
+    print(f"Se ha programado la eliminación del archivo {executable_path}")
 
 
 def show_end_alert(message, error=True):
@@ -186,8 +193,8 @@ def initializate():
             show_end_alert(f"Error inesperado al reiniciar el programa: {e}")
 
         if current_executable != target_executable:
-            print(f"Eliminando el ejecutable {current_executable}")
-            Path(sys.argv[0]).unlink()
+            print(f"Preparando para eliminar el ejecutable {current_executable}")
+            atexit.register(delete_executable, current_executable)
             
         sys.exit(0)
 
