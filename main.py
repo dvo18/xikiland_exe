@@ -340,7 +340,8 @@ def git_management():
 
         if len(repo.heads) == 0:
             print("El repositorio local no tiene commits, reseteando a la rama remota 'main'.")
-            repo.git.reset('--hard', 'origin/main')
+            repo.git.checkout('-f', 'origin/main')
+            
         else:
             print("Restaurando el estado del repositorio...")
             repo.git.restore('--source', 'origin/main', '--staged', '--worktree', '.')
